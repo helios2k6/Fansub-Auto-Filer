@@ -6,4 +6,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Profile|AnyCPU'">
     <StartArguments>"E:\File Harbor\Torrents" "D:\Andrew\Videos\Anime" "E:\Videos\Anime" "G:\Videos\Anime" "H:\Videos\Anime" "I:\Videos\Anime" "J:\Videos\Anime" "K:\Videos\Anime"</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release with Profiling|AnyCPU'">
+    <StartArguments>"E:\File Harbor\Torrents" "D:\Andrew\Videos\Anime" "E:\Videos\Anime" "G:\Videos\Anime" "H:\Videos\Anime" "I:\Videos\Anime" "J:\Videos\Anime" "K:\Videos\Anime"</StartArguments>
+  </PropertyGroup>
 </Project>

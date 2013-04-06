@@ -8,8 +8,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 #if PROFILE
 using System.Diagnostics;
+using System.Threading.Tasks;
 #endif
 
 namespace Media_Library_Auto_Filer
@@ -77,11 +79,15 @@ namespace Media_Library_Auto_Filer
 			Console.Write(builder.ToString());
 		}
 
-		private static void TryMoveFile(string sourceFile, string destFile)
+		private static void SafeMoveFile(string sourceFile, string destFile)
 		{
+#if PROFILE_ONLY
+			return;
+#endif
 			try
 			{
 				File.Move(sourceFile, destFile);
+				Console.WriteLine(string.Format("[INFO]: Successfully moved file {0} to {1}", sourceFile, destFile));
 			}
 			catch (Exception e)
 			{
@@ -143,27 +149,45 @@ namespace Media_Library_Auto_Filer
 
 		private static void ProcessAllMediaFiles(IEnumerable<string> allMediaFiles, FilingManager.FilingManager manager)
 		{
-			foreach (var file in allMediaFiles)
+			var resultDictionary = new ConcurrentDictionary<string, string>();
+			var failureBag = new ConcurrentBag<string>();
+
+			Parallel.ForEach(allMediaFiles, mediaFile =>
 			{
-				ClockIn(file);
-				var fileName = Path.GetFileName(file);
+				ClockIn(mediaFile);
+				var fileName = Path.GetFileName(mediaFile);
 				var fansubFile = FansubFileParsers.ParseFansubFile(fileName);
 				string folder;
 				var findResult = manager.TrySubmitFansubFile(fansubFile, out folder);
-				ClockOut(file);
+				ClockOut(mediaFile);
+
 				if (findResult)
 				{
-					var finalPath = Path.Combine(folder, fileName);
-#if ! PROFILE_ONLY
-					TryMoveFile(file, finalPath);
-#endif
-					Console.WriteLine(string.Format("[MOVED]: {0} -> {1}", file, finalPath));
+					resultDictionary.TryAdd(mediaFile, folder);
 				}
 				else
 				{
-					Console.WriteLine(string.Format("[ERROR]: Could not move file {0}. Could not find folder to transfer to.", file));
+					failureBag.Add(mediaFile);
 				}
+			});
+
+			foreach (var resultEntry in resultDictionary)
+			{
+				var originalFile = resultEntry.Key;
+				var destFolder = resultEntry.Value;
+				var justFileName = Path.GetFileName(originalFile);
+				var finalDest = Path.Combine(destFolder, justFileName);
+
+				SafeMoveFile(originalFile, finalDest);
 			}
+
+			var builder = new StringBuilder();
+			foreach (var failure in failureBag)
+			{
+				builder.AppendFormat("[Error]: Could not find folder for {0}.", failure).AppendLine();
+			}
+
+			Console.Write(builder.ToString());
 		}
 	}
 }
