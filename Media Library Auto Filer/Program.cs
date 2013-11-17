@@ -154,12 +154,14 @@ namespace Media_Library_Auto_Filer
 
 			Parallel.ForEach(allMediaFiles, mediaFile =>
 			{
+				Console.WriteLine(string.Format("[INFO]: Analyzing {0}", mediaFile));
 				ClockIn(mediaFile);
 				var fileName = Path.GetFileName(mediaFile);
 				var fansubFile = FansubFileParsers.ParseFansubFile(fileName);
 				string folder;
 				var findResult = manager.TrySubmitFansubFile(fansubFile, out folder);
 				ClockOut(mediaFile);
+				Console.WriteLine(string.Format("[INFO]: Finished analyzing {0}", mediaFile));
 
 				if (findResult)
 				{

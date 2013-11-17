@@ -88,7 +88,6 @@ namespace FilingManager
 				foreach (var transformation in _stageOneTransformations)
 				{
 					var transformedFile = transformation.Transform(currentFile);
-
 					foreach (var comparator in _comparators)
 					{
 						foreach (var strategy in _comparisonStrategies)
@@ -104,28 +103,6 @@ namespace FilingManager
 				}
 			}
 			return false;
-		}
-
-		/// <summary>
-		/// Submit several <see cref="FansubFile"/>s for filing. 
-		/// 
-		/// Unlike it's singular cousin (<seealso cref="SubmitFansubFile"/>), this function will not throw an exception.
-		/// </summary>
-		/// <param name="files">The files you want to submit</param>
-		/// <returns>A mapping between the <see cref="FansubFile"/> and the folder that was detected.</returns>
-		public IDictionary<FansubFile, string> SubmitFansubFiles(IEnumerable<FansubFile> files)
-		{
-			var resultDictionary = new ConcurrentDictionary<FansubFile, string>();
-			Parallel.ForEach(files.Distinct(), file =>
-			{
-				string folderToTransferTo;
-				if (TrySubmitFansubFile(file, out folderToTransferTo))
-				{
-					resultDictionary.TryAdd(file, folderToTransferTo);
-				}
-			});
-
-			return resultDictionary;
 		}
 
 		/// <summary>
