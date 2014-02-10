@@ -1,0 +1,201 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FileNameParser</name>
+    </assembly>
+    <members>
+        <member name="T:FileNameParser.FansubFile">
+            <summary>
+            Represents a media file that was produced by a Fansub group
+            </summary>
+        </member>
+        <member name="M:FileNameParser.FansubFile.#ctor(System.String,System.String,System.Int32,System.String)">
+            <summary>
+            Constructs a new immutable FansubFile object. You almost certainly won't be constructing these yourself. 
+            <seealso cref="T:FileNameParser.FansubFileParsers"/>
+            </summary>
+            <param name="fansubGroup">The fansub group name</param>
+            <param name="seriesName">The anime series name</param>
+            <param name="episodeNumber">
+            The episode number. If this isn't applicable, then <see cref="F:System.Int32.MinValue"/> should be used
+            </param>
+            <param name="extension">The file extension</param>
+        </member>
+        <member name="M:FileNameParser.FansubFile.DeepCopy">
+            <summary>
+            Makes a deep opy this <see cref="T:FileNameParser.FansubFile"/>.
+            </summary>
+            <returns>A fresh <see cref="T:FileNameParser.FansubFile"/>.</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFile.Equals(System.Object)">
+            <summary>
+            Determines if an object is equal to this <see cref="T:FileNameParser.FansubFile"/>.
+            </summary>
+            <param name="right">The other object.</param>
+            <returns>True if they are equal. False otherwise.</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFile.Equals(FileNameParser.FansubFile)">
+            <summary>
+            Determines whether two FansubFiles are equal
+            </summary>
+            <param name="other">The other FansubFile</param>
+            <returns>True if the files are equal. False otherwise</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFile.GetHashCode">
+            <summary>
+            Get the hash code of this file
+            </summary>
+            <returns>The hash code</returns>
+        </member>
+        <member name="P:FileNameParser.FansubFile.FansubGroup">
+            <summary>
+            The name of the fansub group
+            </summary>
+        </member>
+        <member name="P:FileNameParser.FansubFile.SeriesName">
+            <summary>
+            The name of the anime series
+            </summary>
+        </member>
+        <member name="P:FileNameParser.FansubFile.EpisodeNumber">
+            <summary>
+            The episode number
+            </summary>
+        </member>
+        <member name="P:FileNameParser.FansubFile.Extension">
+            <summary>
+            The file extension of the media file
+            </summary>
+        </member>
+        <member name="T:FileNameParser.FansubFileParsers">
+            <summary>
+            A static factory class that parses file names (without the full path) and returns a <see cref="T:FileNameParser.FansubFile"/>
+            </summary>
+        </member>
+        <member name="F:FileNameParser.FansubFileParsers.NormalizedFileNameParser">
+            <summary>
+            A static parser that accepts normalized file names
+            </summary>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.RemoveEndTags(System.String)">
+            <summary>
+            Attempts to chop off all the tags at the end of a file name
+            </summary>
+            <param name="fileName">The file name</param>
+            <returns>A string with all of the tags removed</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.RemoveFansubTag(System.String)">
+            <summary>
+            Attempts to chop off the front Fansub group tag of the file name
+            </summary>
+            <param name="fileName">The file name</param>
+            <returns>A string with the front fansub tag chopped off</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.RemoveVersionNumber(System.String)">
+            <summary>
+            Attempts to remove the version number after the episode number.
+            
+            This is a bit trickier because there doesn't necessarily need to be a space between the 
+            episode number and the version number. Furthermore, if the version number is within
+            an end-tag, we won't be able to detect it.
+            
+            So, in order to accomplish this, we will reverse the string and look for digits followed by 
+            the letter 'v'
+            </summary>
+            <param name="fileName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.RemoveAllTagsAndExtension(System.String)">
+            <summary>
+            Attempts to remove all tags and the extension from the file name. It will also remove the version number
+            of the file "v*"
+            </summary>
+            <param name="fileName">The file name</param>
+            <returns>A string with the front fansub tag and the leading tags removed</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.ParseFansubFile(System.String)">
+            <summary>
+            Parse a file name that corrosponds to one of the common fansub naming formats. 
+            
+            These naming formats are entirely idiosyncratic, so there's no formal grammar available.
+            </summary>
+            <param name="fileName">The file name, without the full path</param>
+            <returns>A <see cref="T:FileNameParser.FansubFile"/> with all of the parsable information</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.GetFansubGroup(System.String)">
+            <summary>
+            Attempts to get the fansub group from the file name.
+            </summary>
+            <param name="fileName">The file name (not full path)</param>
+            <returns>The fansub group name</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.GetEpisodeNumber(System.String)">
+            <summary>
+            Attempts to get the episode number. Returns int.MinValue if it couldn't find it.
+            </summary>
+            <remarks>
+            Works exactly the same as GetAnimeSeries, except that it goes for the complete opposite. It'll first try
+            to separate out everything by dashes and detect the last element to see if it's a number. Otherwise, it
+            will separate everything out by spaces and see if the last element is a number. If both of these methods
+            fail, then we return int.MinValue
+            </remarks>
+            <param name="fileName">The file name (not full path)</param>
+            <returns>The episode number; int.MinValue if it couldn't find it</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.TryGetEpisodeNumberUsingSpaceDelimination(System.String,System.Int32@)">
+            <summary>
+            Attempts to get the episode number by splitting the string by spaces and assuming the last number is the episode number
+            </summary>
+            <param name="fileNameNoTagsUnderscoresVersionNumber">The file name</param>
+            <param name="episodeNumber">The reference where we write the episode number to</param>
+            <returns>Whether or not this method succeeded</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.TryGetEpisodeNumberUsingDashDelimination(System.String,System.Int32@)">
+            <summary>
+            Attempts to get the episode number by splitting the string by dashes and assuming the last number is the episode number
+            </summary>
+            <param name="fileNameNoTagsUnderscoresVerNumber">The file name</param>
+            <param name="episodeNumber">The reference where we write the episode number to</param>
+            <returns>Whether or not this method succeeded</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.GetAnimeSeriesName(System.String)">
+            <summary>
+            Attempts to get the anime series name. Returns string.Empty if it couldn't find it.
+            </summary>
+            <remarks>
+            
+            Works by:
+            1. Chopping off the end tags
+            2. Chopping off the Fansub group name
+            3. Remove underscores
+            4. Check against the most common deliminator: the dash ("-")
+            5. If we are able to deliminate the file name by the dash and parse an integer at the end, we'll 
+            assume that everything before it was a part of the anime series name
+            6. Otherwise, if the file name cannot be deliminated by a dash or we couldn't parse an integer 
+            at the end, then we'll have to split on the spaces after trimming the file name
+            7. And then we assume that the last contiguous set of strings is the digit. If this turns out to be false, then 
+            we simply just re-concatonate everything back together and return that
+            
+            </remarks>
+            <param name="fileName">The file name (not full path)</param>
+            <returns>The anime series name</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.TryGetSeriesNameUsingDashDelimination(System.String,System.String@)">
+            <summary>
+            Helper function for <see cref="M:FileNameParser.FansubFileParsers.GetAnimeSeriesName(System.String)"/>. 
+            </summary>
+            <param name="fileNameNoTagsUnderscoresVersionNumber">File name</param>
+            <param name="seriesName">The reference we should write the result to</param>
+            <returns>Whether this worked or not</returns>
+        </member>
+        <member name="M:FileNameParser.FansubFileParsers.TryGetSeriesNameUsingSpaceDelimination(System.String,System.String@)">
+            <summary>
+            Helper function for <see cref="M:FileNameParser.FansubFileParsers.GetAnimeSeriesName(System.String)"/>. This is different in that we use straight up string manipulation
+            instead of any parsers
+            </summary>
+            <param name="fileNameNoTagsUnderscoresVersionNumber">File name</param>
+            <param name="seriesName">The reference we should write the result to</param>
+            <returns>Whether this worked or not</returns>
+        </member>
+    </members>
+</doc>
