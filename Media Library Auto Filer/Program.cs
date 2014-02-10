@@ -18,15 +18,20 @@ namespace Media_Library_Auto_Filer
 {
 	public static class Program
 	{
+		#region private enums
 		/// <summary>
 		/// Specifies whether to move or copy a file
 		/// </summary>
-		public enum FileAction { MOVE, COPY }
+		private enum FileAction { MOVE, COPY }
+		#endregion
 
+		#region private static fields
 		private static Stopwatch Timer;
 		private static ConcurrentDictionary<string, long> StartTimes;
 		private static ConcurrentDictionary<string, long> EndTimes;
+		#endregion
 
+		#region private static functions
 		[Conditional("PROFILE")]
 		private static void InitializeProfilingEnvironment()
 		{
@@ -161,6 +166,69 @@ namespace Media_Library_Auto_Filer
 			return null;
 		}
 
+		private static void ProcessAllMediaFiles(IEnumerable<string> allMediaFiles, FilingManager.FilingManager manager, FileAction fileAction)
+		{
+			var resultDictionary = new ConcurrentDictionary<string, string>();
+			var failureBag = new ConcurrentBag<string>();
+
+			Parallel.ForEach(allMediaFiles, mediaFile =>
+			{
+				Console.WriteLine(string.Format("[INFO]: Analyzing {0}", mediaFile));
+				ClockIn(mediaFile);
+				var fileName = Path.GetFileName(mediaFile);
+				var fansubFile = FansubFileParsers.ParseFansubFile(fileName);
+				string folder;
+				var findResult = manager.TrySubmitFansubFile(fansubFile, out folder);
+				ClockOut(mediaFile);
+				Console.WriteLine(string.Format("[INFO]: Finished analyzing {0}", mediaFile));
+
+				if (findResult)
+				{
+					resultDictionary.TryAdd(mediaFile, folder);
+				}
+				else
+				{
+					failureBag.Add(mediaFile);
+				}
+			});
+
+			foreach (var resultEntry in resultDictionary)
+			{
+				var originalFile = resultEntry.Key;
+
+				var destFolder = resultEntry.Value;
+				var justFileName = Path.GetFileName(originalFile);
+				var finalDest = Path.Combine(destFolder, justFileName);
+
+				Action actionOnFile = default(Action);
+				Action<Exception> reactionOnFile = default(Action<Exception>);
+				switch (fileAction)
+				{
+					case FileAction.MOVE:
+						actionOnFile = () => MoveFile(originalFile, finalDest);
+						reactionOnFile = e => MoveReaction(originalFile, finalDest, e);
+						break;
+					case FileAction.COPY:
+						actionOnFile = () => CopyFile(originalFile, finalDest);
+						reactionOnFile = e => CopyReaction(originalFile, finalDest, e);
+						break;
+					default:
+						throw new InvalidOperationException("Unable to determine FileAction");
+				}
+
+				SafeAction(actionOnFile, reactionOnFile);
+			}
+
+			var builder = new StringBuilder();
+			foreach (var failure in failureBag)
+			{
+				builder.AppendFormat("[Error]: Could not find folder for {0}.", failure).AppendLine();
+			}
+
+			Console.Write(builder.ToString());
+		}
+		#endregion
+
 		public static void Main(string[] args)
 		{
 			if (args.Length < 3)
@@ -206,70 +274,6 @@ namespace Media_Library_Auto_Filer
 			InitializeProfilingEnvironment();
 			ProcessAllMediaFiles(allMediaFiles, manager, fileAction.Value);
 			PrintStatistics();
-		}
-
-		private static void ProcessAllMediaFiles(IEnumerable<string> allMediaFiles, FilingManager.FilingManager manager, FileAction fileAction)
-		{
-			var resultDictionary = new ConcurrentDictionary<string, string>();
-			var failureBag = new ConcurrentBag<string>();
-
-			Parallel.ForEach(allMediaFiles, mediaFile =>
-			{
-				Console.WriteLine(string.Format("[INFO]: Analyzing {0}", mediaFile));
-				ClockIn(mediaFile);
-				var fileName = Path.GetFileName(mediaFile);
-				var fansubFile = FansubFileParsers.ParseFansubFile(fileName);
-				string folder;
-				var findResult = manager.TrySubmitFansubFile(fansubFile, out folder);
-				ClockOut(mediaFile);
-				Console.WriteLine(string.Format("[INFO]: Finished analyzing {0}", mediaFile));
-
-				if (findResult)
-				{
-					resultDictionary.TryAdd(mediaFile, folder);
-				}
-				else
-				{
-					failureBag.Add(mediaFile);
-				}
-			});
-
-			foreach (var resultEntry in resultDictionary)
-			{
-				var originalFile = resultEntry.Key;
-
-				var destFolder = resultEntry.Value;
-				var justFileName = Path.GetFileName(originalFile);
-				var finalDest = Path.Combine(destFolder, justFileName);
-
-				//SafeMoveFile(originalFile, finalDest);
-
-				Action actionOnFile = default(Action);
-				Action<Exception> reactionOnFile = default(Action<Exception>);
-				switch(fileAction)
-				{
-					case FileAction.MOVE:
-						actionOnFile = () => MoveFile(originalFile, finalDest);
-						reactionOnFile = e => MoveReaction(originalFile, finalDest, e);
-						break;
-					case FileAction.COPY:
-						actionOnFile = () => CopyFile(originalFile, finalDest);
-						reactionOnFile = e => CopyReaction(originalFile, finalDest, e);
-						break;
-					default:
-						throw new InvalidOperationException("Unable to determine FileAction");
-				}
-
-				SafeAction(actionOnFile, reactionOnFile);
-			}
-
-			var builder = new StringBuilder();
-			foreach (var failure in failureBag)
-			{
-				builder.AppendFormat("[Error]: Could not find folder for {0}.", failure).AppendLine();
-			}
-
-			Console.Write(builder.ToString());
 		}
 	}
 }
