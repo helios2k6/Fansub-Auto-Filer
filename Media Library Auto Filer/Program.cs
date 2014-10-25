@@ -83,7 +83,7 @@ namespace Media_Library_Auto_Filer
 		{
 			var builder = new StringBuilder();
 			builder.Append("Media File Auto Filer").AppendLine();
-			builder.Append("Description: Automatically moves anime files in the current directory to any of the detected anime folders");
+			builder.Append("Description: Automatically moves anime files in the current directory to any of the detected anime folders").AppendLine();
 			builder.Append("Usage: <this program> <directory to scan> <copy or move files> <repository folder> [additional repository folders...]").AppendLine();
 
 			Console.Write(builder.ToString());
